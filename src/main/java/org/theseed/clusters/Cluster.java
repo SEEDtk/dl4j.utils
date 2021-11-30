@@ -23,7 +23,8 @@ import org.theseed.reports.NaturalSort;
  * together until each is sufficiently large that adding more data points dilutes the
  * cluster to a non-meaningful level.
  *
- * Clusters are sorted by size (largest first) and then by the natural ordering of the names.
+ * Clusters are sorted by size (largest first), then score (highest first), and then by
+ * the natural ordering of the names.
  *
  * @author Bruce Parrello
  *
@@ -179,8 +180,11 @@ public class Cluster implements Comparable<Cluster> {
     @Override
     public int compareTo(Cluster o) {
         int retVal = o.size() - this.size();
-        if (retVal == 0)
-            retVal = NATURAL_SORT.compare(this.id, o.id);
+        if (retVal == 0) {
+            retVal = Double.compare(o.score, this.score);
+            if (retVal == 0)
+                retVal = NATURAL_SORT.compare(this.id, o.id);
+        }
         return retVal;
     }
 

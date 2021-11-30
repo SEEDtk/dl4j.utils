@@ -100,6 +100,7 @@ class TestClustering {
 
     @Test
     void testClusterGroups() throws IOException {
+        log.info("Testing group algorithms.");
         File testFile = new File("data", "rnaseq.tbl");
         ClusterGroup group = ClusterGroup.load(testFile, ClusterMergeMethod.COMPLETE);
         assertThat(group.size(), equalTo(27));
@@ -178,34 +179,7 @@ class TestClustering {
         while (group.merge(0.64))
             count++;
         log.info("{} merges performed.  {} groups created.", count, group.size());
-        // Get the group list.
-        groupList = group.getClusters();
-        // Process the scores in the new groups.
-        for (Cluster cluster : groupList) {
-            if (cluster.size() > 1) {
-                log.info("Cluster {} (height = {}, score = {}) contains {}.", cluster,
-                        cluster.getHeight(), cluster.getScore(),
-                        StringUtils.join(cluster.getMembers(), ','));
-            }
-            // Compute the average similarity for this group.
-            List<String> members = new ArrayList<String>(cluster.getMembers());
-            double total = 0.0;
-            int n = 0;
-            for (int i = 0; i < members.size(); i++) {
-                Cluster mem1 = oldGroup.getCluster(members.get(i));
-                for (int j = i+1; j < members.size(); j++) {
-                    Cluster mem2 = oldGroup.getCluster(members.get(j));
-                    double score = mem1.getScore(mem2);
-                    total += score;
-                    n++;
-                }
-            }
-            if (n > 0) {
-                double average = total / n;
-                assertThat(cluster.toString(), average, greaterThanOrEqualTo(0.64));
-                assertThat(cluster.toString(), average, closeTo(cluster.getScore(), 0.0001));
-            }
-        }
+        this.testAverageClusters(group, oldGroup, 0.64);
         // Finally, do it with SINGLE.
         group = ClusterGroup.load(testFile, ClusterMergeMethod.SINGLE);
         count = 0;
@@ -240,6 +214,66 @@ class TestClustering {
             }
         }
 
+    }
+
+    /**
+     * Verify that all the clusters have an average internal distance equal to the score.
+     *
+     * @param group		cluster group to test
+     * @param oldGroup	cluster group containing all the similarities
+     * @param limit		score limit for the clustering
+     */
+    protected void testAverageClusters(ClusterGroup group, ClusterGroup oldGroup, double limit) {
+        // Get the group list.
+        List<Cluster> groupList = group.getClusters();
+        // Process the scores in the new groups.
+        for (Cluster cluster : groupList) {
+            if (cluster.size() > 1) {
+                log.info("Cluster {} (height = {}, score = {}) contains {}.", cluster,
+                        cluster.getHeight(), cluster.getScore(),
+                        StringUtils.join(cluster.getMembers(), ','));
+            }
+            // Compute the average similarity for this group.
+            List<String> members = new ArrayList<String>(cluster.getMembers());
+            double total = 0.0;
+            int n = 0;
+            for (int i = 0; i < members.size(); i++) {
+                Cluster mem1 = oldGroup.getCluster(members.get(i));
+                for (int j = i+1; j < members.size(); j++) {
+                    Cluster mem2 = oldGroup.getCluster(members.get(j));
+                    double score = mem1.getScore(mem2);
+                    total += score;
+                    n++;
+                }
+            }
+            if (n > 0) {
+                double average = total / n;
+                assertThat(cluster.toString(), average, greaterThanOrEqualTo(limit));
+                assertThat(cluster.toString(), average, closeTo(cluster.getScore(), 0.0001));
+            }
+        }
+    }
+
+
+    @Test
+    public void testLimitedClustering() throws IOException {
+        log.info("Testing limited groups.");
+        File testFile = new File("data", "rnaseq.tbl");
+        ClusterGroup group = ClusterGroup.load(testFile, ClusterMergeMethod.AVERAGE);
+        assertThat(group.size(), equalTo(27));
+        // Limit the clusters to size 3.
+        group.setMaxSize(3);
+        int count = 0;
+        while (group.merge(0.64))
+            count++;
+        log.info("{} merges performed.  {} groups created.", count, group.size());
+        // We need to verify all the clusters built.  Reload the group to get the old
+        // scores back.
+        ClusterGroup oldGroup = ClusterGroup.load(testFile, ClusterMergeMethod.SINGLE);
+        this.testAverageClusters(group, oldGroup, 0.64);
+        // Now verify all the clusters are 3 or less.
+        for (Cluster cluster : group.getClusters())
+            assertThat(cluster.getId(), cluster.size(), lessThanOrEqualTo(3));
     }
 
 }

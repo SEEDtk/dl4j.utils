@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
+import java.util.NavigableSet;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
@@ -41,11 +41,13 @@ public class ClusterGroup {
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(ClusterGroup.class);
     /** similarity queue */
-    private SortedSet<Similarity> simQueue;
+    private NavigableSet<Similarity> simQueue;
     /** map of clusters */
     private Map<String, Cluster> clusterMap;
     /** method for computing merged similarities */
     private ClusterMergeMethod method;
+    /** maximum permissible cluster size */
+    private int maxSize;
 
     /**
      * Create a new cluster group.
@@ -58,6 +60,8 @@ public class ClusterGroup {
         this.simQueue = new TreeSet<Similarity>();
         // Note we give the hash map extra capacity to avoid clashes.
         this.clusterMap = new HashMap<String, Cluster>((size + 1) * 4 / 3);
+        // Default to the maximum possible group size for the size limit.
+        this.maxSize = Integer.MAX_VALUE;
     }
 
     /**
@@ -103,7 +107,7 @@ public class ClusterGroup {
             this.addSim(line.get(col1Idx), line.get(col2Idx), score);
             // Indicate our progress.
             count++;
-            if (count % 5000 == 0)
+            if (count % 20000 == 0)
                 log.info("{} records processed.", count);
         }
         int points = this.clusterMap.size();
@@ -137,7 +141,7 @@ public class ClusterGroup {
         ClusterGroup retVal = new ClusterGroup(size, method);
         // Read from the file.
         log.info("Reading cluster group of type {} from {}.  {} data points estimated.",
-                method, inFile);
+                method, inFile, size);
         try (TabbedLineReader inStream = new TabbedLineReader(inFile)) {
             retVal.readSims(inStream, 0, 1, 2, false);
         }
@@ -202,41 +206,56 @@ public class ClusterGroup {
      */
     public boolean merge(double minSim) {
         boolean retVal = false;
-        if (this.simQueue.size() >= 1) {
-            Similarity closest = this.simQueue.first();
+        boolean done = false;
+        while (! done && this.simQueue.size() >= 1) {
+            // Get the closest similarity.  Note we remove it from the queue.  If we can't use
+            // it now, we will not be able to unless it changes and is re-added.
+            Similarity closest = this.simQueue.pollFirst();
             double simAB = closest.getScore();
-            if (simAB >= minSim) {
-                // Here we can do the merge.
-                retVal = true;
+            if (simAB < minSim) {
+                // We have run out of permissible similarities.
+                done = true;
+            } else {
+                // Now we need to check the clusters.  We only proceed if combining them
+                // does not push us past the maximum size.
                 Cluster clA = this.clusterMap.get(closest.getId1());
                 Cluster clB = this.clusterMap.get(closest.getId2());
-                log.debug("Merging {} and {} with similarity {}.", clA, clB, simAB);
-                // Remove all the similarities in A and B from the queue.
-                // The A similarities will be added back with new scores.
-                this.simQueue.removeAll(clB.getSims());
-                Collection<Similarity> clAsims = clA.getSims();
-                this.simQueue.removeAll(clAsims);
-                // Remove the AB similarity from A's sim list.  B is being merged into A.
-                // Note that clAsims is backed by the sim list in A, so it will update, too.
-                clA.removeSim(clB);
-                // Compute the score of the merged cluster.
-                double newScore = this.method.mergedScore(clA.getScore(), clB.getScore(), simAB,
-                        clA.size(), clB.size());
-                // Now loop through clAsims, updating the scores.
-                clAsims.parallelStream().forEach(x ->
-                        x.updateScore(this.method, simAB, clA, clB,
-                                this.clusterMap.get(x.getOtherId(clA))));
-                // Now remove B's scores from all the other clusters.
-                clB.getSims().parallelStream().map(x -> this.clusterMap.get(x.getOtherId(clB)))
-                        .forEach(x -> x.removeSim(clB));
-                // Add the updated scores back to the queue.  Note that B's scores
-                // are never added back, as they are no longer relevant.
-                this.simQueue.addAll(clAsims);
-                // Finally, merge cluster B into cluster A and remove B from the map.
-                // We have to do this last, since the score updates rely on the old sizes.
-                clA.merge(clB);
-                this.clusterMap.remove(clB.getId());
-                clA.setScore(newScore);
+                if (clA.size() + clB.size() <= this.maxSize) {
+                    // Here we are done looping, and we have a merge we can do.
+                    retVal = true;
+                    done = true;
+                    log.debug("Merging {} and {} with similarity {}.", clA, clB, simAB);
+                    // Remove all the similarities in A and B from the queue.
+                    // The A similarities will be added back with new scores.
+                    this.simQueue.removeAll(clB.getSims());
+                    Collection<Similarity> clAsims = clA.getSims();
+                    this.simQueue.removeAll(clAsims);
+                    // Remove the AB similarity from A's sim list.  B is being merged into A.
+                    // Note that clAsims is backed by the sim list in A, so it will update, too.
+                    clA.removeSim(clB);
+                    // Compute the score of the merged cluster.
+                    double newScore = this.method.mergedScore(clA.getScore(), clB.getScore(), simAB,
+                            clA.size(), clB.size());
+                    // Now loop through clAsims, updating the scores.
+                    clAsims.parallelStream().forEach(x ->
+                            x.updateScore(this.method, simAB, clA, clB,
+                                    this.clusterMap.get(x.getOtherId(clA))));
+                    // Now remove B's scores from all the other clusters.
+                    clB.getSims().parallelStream().map(x -> this.clusterMap.get(x.getOtherId(clB)))
+                            .forEach(x -> x.removeSim(clB));
+                    // Can we make this cluster any bigger?
+                    if (clA.size() < this.maxSize) {
+                        // Yes. Add the updated scores back to the queue.  Note that B's scores
+                        // are never added back, as they are no longer relevant.
+                        this.simQueue.addAll(clAsims);
+                    }
+                    // Finally, merge cluster B into cluster A and remove B from the map.
+                    // We have to do all of this last, since the score updates rely on the
+                    // old sizes.
+                    clA.merge(clB);
+                    this.clusterMap.remove(clB.getId());
+                    clA.setScore(newScore);
+                }
             }
         }
         return retVal;
@@ -249,6 +268,22 @@ public class ClusterGroup {
      */
     public Cluster getCluster(String clID) {
         return this.clusterMap.get(clID);
+    }
+
+    /**
+     * @return the maximum permissible group size
+     */
+    public int getMaxSize() {
+        return this.maxSize;
+    }
+
+    /**
+     * Specify a new maximum group size.
+     *
+     * @param maxSize 	the new maximum size
+     */
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
     }
 
 }
