@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.slf4j.Logger;
@@ -48,6 +50,8 @@ public class ClusterGroup {
     private ClusterMergeMethod method;
     /** maximum permissible cluster size */
     private int maxSize;
+    /** set of data point names */
+    private Set<String> dataPoints;
 
     /**
      * Create a new cluster group.
@@ -59,7 +63,9 @@ public class ClusterGroup {
         this.method = method;
         this.simQueue = new TreeSet<Similarity>();
         // Note we give the hash map extra capacity to avoid clashes.
-        this.clusterMap = new HashMap<String, Cluster>((size + 1) * 4 / 3);
+        int hashCapacity = (size + 1) * 4 / 3;
+        this.clusterMap = new HashMap<String, Cluster>(hashCapacity);
+        this.dataPoints = new HashSet<String>(hashCapacity);
         // Default to the maximum possible group size for the size limit.
         this.maxSize = Integer.MAX_VALUE;
     }
@@ -179,6 +185,8 @@ public class ClusterGroup {
         cl1.addSim(sim);
         cl2.addSim(sim);
         this.simQueue.add(sim);
+        this.dataPoints.add(id1);
+        this.dataPoints.add(id2);
     }
 
     /**
@@ -284,6 +292,13 @@ public class ClusterGroup {
      */
     public void setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+    }
+
+    /**
+     * @return
+     */
+    public List<String> getDataPoints() {
+        return new ArrayList<String>(this.dataPoints);
     }
 
 }
