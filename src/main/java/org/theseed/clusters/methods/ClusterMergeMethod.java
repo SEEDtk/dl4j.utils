@@ -4,7 +4,7 @@
 package org.theseed.clusters.methods;
 
 /**
- * This is the base class for a method to merge two clusters.  The only thing
+ * This is the enumeration for a method to merge two clusters.  The only thing
  * that matters is how we compute the similarity between clusters after merging.
  *
  * To convert the similarity of A to X to the similarity of the merged AB to X,
