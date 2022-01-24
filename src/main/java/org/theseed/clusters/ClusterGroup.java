@@ -5,6 +5,7 @@ package org.theseed.clusters;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,14 +114,14 @@ public class ClusterGroup {
             this.addSim(line.get(col1Idx), line.get(col2Idx), score);
             // Indicate our progress.
             count++;
-            if (count % 20000 == 0)
+            if (count % 100000 == 0)
                 log.info("{} records processed.", count);
         }
         int points = this.clusterMap.size();
         log.info("{} similarities read for {} data points.", count, points);
         int simCount = this.simQueue.size();
         if (simCount < count)
-            log.warn("WARINING: {} redundant similarities read.", count - simCount);
+            log.warn("WARNING: {} redundant similarities read.", count - simCount);
         // If the dataset is expected to be complete, check that here.
         if (! sparse) {
             int expected = points * (points - 1) / 2;
@@ -295,10 +296,43 @@ public class ClusterGroup {
     }
 
     /**
-     * @return
+     * @return a list of data point IDs
      */
     public List<String> getDataPoints() {
         return new ArrayList<String>(this.dataPoints);
+    }
+
+    /**
+     * Save the current correlations in this cluster group to a tab-delimited file.  The
+     * file will have headers, with the first ID in column 1, the second in column 2, and
+     * the correlation (similarity) in column 3.
+     *
+     * @param outFile	name of the file in which to store the correlations
+     */
+    public void save(File outFile) throws IOException {
+        try (PrintWriter writer = new PrintWriter(outFile)) {
+            log.info("Writing correlation data to {}.", outFile);
+            int clusters = 0;
+            int records = 0;
+            writer.println("id1\tid2\tscore");
+            for (Cluster cl : this.clusterMap.values()) {
+                clusters++;
+                String clId = cl.getId();
+                for (Similarity sim : cl.getSims()) {
+                    String id1 = sim.getId1();
+                    // Insure we only output a correlation once.  The same similarity will appear
+                    // in both clusters.
+                    if (id1.equals(clId)) {
+                        String id2 = sim.getId2();
+                        writer.println(id1 + "\t" + id2 + "\t" + String.valueOf(sim.getScore()));
+                        records++;
+                        if (records % 100000 == 0)
+                            log.info("{} records written for {} clusters.", records, clusters);
+                    }
+                }
+            }
+            log.info("{} records written to {} for {} clusters.", records, outFile, clusters);
+        }
     }
 
 }
