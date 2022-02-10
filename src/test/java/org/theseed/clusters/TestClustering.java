@@ -5,7 +5,6 @@ package org.theseed.clusters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.theseed.test.Matchers.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +119,7 @@ class TestClustering {
         yaaW.getSims().stream().forEach(x -> yaaWMap.put(x.getOtherId(yaaW), x.getScore()));
         // Perform the merge.
         boolean merged = group.merge(0.64);
-        assertThat(merged, isTrue());
+        assertThat(merged, equalTo(true));
         assertThat(yaaJ.size(), equalTo(2));
         // Verify that the similarity of the merged cluster to each other cluster is <= the
         // old similarities.

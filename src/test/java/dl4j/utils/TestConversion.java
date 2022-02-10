@@ -5,7 +5,6 @@ package dl4j.utils;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.theseed.test.Matchers.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class TestConversion {
             assertThat(convertedStream.findField("partF"), equalTo(4));
             assertThat(convertedStream.findField("type"), equalTo(5));
             assertThat(convertedStream.size(), equalTo(6));
-            assertThat(convertedStream.hasNext(), isTrue());
+            assertThat(convertedStream.hasNext(), equalTo(true));
             TabbedLineReader.Line line = convertedStream.next();
             assertThat(line.get(0), equalTo("sampleN"));
             assertThat(line.get(1), equalTo("5.0"));
@@ -40,7 +39,7 @@ public class TestConversion {
             assertThat(line.get(3), equalTo("2.0"));
             assertThat(line.get(4), equalTo("0.0"));
             assertThat(line.get(5), equalTo("N"));
-            assertThat(convertedStream.hasNext(), isTrue());
+            assertThat(convertedStream.hasNext(), equalTo(true));
             line = convertedStream.next();
             assertThat(line.get(0), equalTo("sampleY"));
             assertThat(line.get(1), equalTo("5.1"));
@@ -48,7 +47,7 @@ public class TestConversion {
             assertThat(line.get(3), equalTo("2.1"));
             assertThat(line.get(4), equalTo("0.0"));
             assertThat(line.get(5), equalTo("Y"));
-            assertThat(convertedStream.hasNext(), isFalse());
+            assertThat(convertedStream.hasNext(), equalTo(false));
         }
     }
 
