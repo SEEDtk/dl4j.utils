@@ -21,7 +21,7 @@ import org.theseed.io.TabbedLineReader;
  * @author Bruce Parrello
  *
  */
-public class ConversionStream extends InputStream implements AutoCloseable {
+public class ConversionStream extends InputStream {
 	
 	// FIELDS
 	/** source input stream */

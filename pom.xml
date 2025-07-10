@@ -32,6 +32,11 @@
             <artifactId>basic</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.theseed</groupId>
+            <artifactId>shared</artifactId>
+            <version>1.0.0</version>
+        </dependency>
       <dependency>
           <groupId>org.hamcrest</groupId>
           <artifactId>hamcrest</artifactId>
@@ -49,4 +54,31 @@
         <version>1.2.10</version>
     </dependency>
   </dependencies>
+   <build>
+        <finalName>dl4j.utils</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                    <id>install-during-package</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>install</goal>
+                    </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
