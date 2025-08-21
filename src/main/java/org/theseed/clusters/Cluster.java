@@ -9,9 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.theseed.reports.NaturalSort;
 
 /**
@@ -32,14 +29,12 @@ import org.theseed.reports.NaturalSort;
 public class Cluster implements Comparable<Cluster> {
 
     // FIELDS
-    /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(Cluster.class);
     /** cluster ID */
-    private String id;
+    private final String id;
     /** set of member IDs */
-    private Set<String> members;
+    private final Set<String> members;
     /** map of other cluster IDs to similarities */
-    private Map<String, Similarity> simMap;
+    private final Map<String, Similarity> simMap;
     /** height of this cluster */
     private int height;
     /** score of this cluster */
@@ -54,9 +49,9 @@ public class Cluster implements Comparable<Cluster> {
      */
     public Cluster(String dataId) {
         this.id = dataId;
-        this.members = new TreeSet<String>(NATURAL_SORT);
+        this.members = new TreeSet<>(NATURAL_SORT);
         this.members.add(dataId);
-        this.simMap = new TreeMap<String, Similarity>();
+        this.simMap = new TreeMap<>();
         this.height = 1;
         this.score = Double.POSITIVE_INFINITY;
     }
@@ -112,8 +107,6 @@ public class Cluster implements Comparable<Cluster> {
      * @return the similarity score, or -INFINITY if the record is not found
      */
     public double getScore(Cluster other) {
-        if (other == null)
-            log.error("Null passed.");
         return this.getScore(other.getId());
     }
 

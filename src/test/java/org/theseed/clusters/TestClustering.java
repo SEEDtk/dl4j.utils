@@ -29,7 +29,7 @@ import org.theseed.clusters.methods.ClusterMergeMethod;
 class TestClustering {
 
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TestClustering.class);
+    private static final Logger log = LoggerFactory.getLogger(TestClustering.class);
 
 
     @Test
@@ -113,9 +113,9 @@ class TestClustering {
         Cluster yaaJ = group.getCluster("yaaJ");
         Cluster yaaW = group.getCluster("yaaW");
         // Create a map of the current similarities for yaaJ and yaaW.
-        Map<String, Double> yaaJMap = new HashMap<String, Double>(30);
+        Map<String, Double> yaaJMap = new HashMap<>(30);
         yaaJ.getSims().stream().forEach(x -> yaaJMap.put(x.getOtherId(yaaJ), x.getScore()));
-        Map<String, Double> yaaWMap = new HashMap<String, Double>(30);
+        Map<String, Double> yaaWMap = new HashMap<>(30);
         yaaW.getSims().stream().forEach(x -> yaaWMap.put(x.getOtherId(yaaW), x.getScore()));
         // Perform the merge.
         boolean merged = group.merge(0.64);
@@ -162,7 +162,7 @@ class TestClustering {
             }
             // Verify that the similarities of all the members of this group are not less than
             // the minimum 0.64.
-            List<String> members = new ArrayList<String>(cluster.getMembers());
+            List<String> members = new ArrayList<>(cluster.getMembers());
             for (int i = 0; i < members.size(); i++) {
                 Cluster mem1 = oldGroup.getCluster(members.get(i));
                 for (int j = i+1; j < members.size(); j++) {
@@ -195,7 +195,7 @@ class TestClustering {
                         StringUtils.join(cluster.getMembers(), ','));
             }
             // We want to compute the maximum similarity for this group.
-            List<String> members = new ArrayList<String>(cluster.getMembers());
+            List<String> members = new ArrayList<>(cluster.getMembers());
             // Only proceed if there are at least two members; otherwise, there
             // is no score to measure.
             if (members.size() > 1) {
@@ -233,7 +233,7 @@ class TestClustering {
                         StringUtils.join(cluster.getMembers(), ','));
             }
             // Compute the average similarity for this group.
-            List<String> members = new ArrayList<String>(cluster.getMembers());
+            List<String> members = new ArrayList<>(cluster.getMembers());
             double total = 0.0;
             int n = 0;
             for (int i = 0; i < members.size(); i++) {

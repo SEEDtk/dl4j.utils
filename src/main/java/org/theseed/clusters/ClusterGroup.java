@@ -42,17 +42,17 @@ public class ClusterGroup {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(ClusterGroup.class);
+    private static final Logger log = LoggerFactory.getLogger(ClusterGroup.class);
     /** similarity queue */
-    private NavigableSet<Similarity> simQueue;
+    private final NavigableSet<Similarity> simQueue;
     /** map of clusters */
-    private Map<String, Cluster> clusterMap;
+    private final Map<String, Cluster> clusterMap;
     /** method for computing merged similarities */
-    private ClusterMergeMethod method;
+    private final ClusterMergeMethod method;
     /** maximum permissible cluster size */
     private int maxSize;
     /** set of data point names */
-    private Set<String> dataPoints;
+    private final Set<String> dataPoints;
 
     /**
      * Create a new cluster group.
@@ -62,11 +62,11 @@ public class ClusterGroup {
      */
     public ClusterGroup(int size, ClusterMergeMethod method) {
         this.method = method;
-        this.simQueue = new TreeSet<Similarity>();
+        this.simQueue = new TreeSet<>();
         // Note we give the hash map extra capacity to avoid clashes.
         int hashCapacity = (size + 1) * 4 / 3;
-        this.clusterMap = new HashMap<String, Cluster>(hashCapacity);
-        this.dataPoints = new HashSet<String>(hashCapacity);
+        this.clusterMap = new HashMap<>(hashCapacity);
+        this.dataPoints = new HashSet<>(hashCapacity);
         // Default to the maximum possible group size for the size limit.
         this.maxSize = Integer.MAX_VALUE;
     }
@@ -201,7 +201,7 @@ public class ClusterGroup {
      * @return the sorted list of clusters
      */
     public List<Cluster> getClusters() {
-        List<Cluster> retVal = new ArrayList<Cluster>(this.clusterMap.values());
+        List<Cluster> retVal = new ArrayList<>(this.clusterMap.values());
         Collections.sort(retVal);
         return retVal;
     }
@@ -299,7 +299,7 @@ public class ClusterGroup {
      * @return a list of data point IDs
      */
     public List<String> getDataPoints() {
-        return new ArrayList<String>(this.dataPoints);
+        return new ArrayList<>(this.dataPoints);
     }
 
     /**
