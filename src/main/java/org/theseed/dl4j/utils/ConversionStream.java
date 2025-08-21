@@ -1,13 +1,14 @@
 /**
  * 
  */
-package dl4j.utils;
+package org.theseed.dl4j.utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
 import org.theseed.io.TabbedLineReader;
 
 /**
